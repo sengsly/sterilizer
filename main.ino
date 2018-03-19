@@ -10,6 +10,7 @@
 #define HEATER_PIN 3
 #define START_PIN 4
 #define SHUTDOWN_PIN  5
+#define BUZZER_PIN  6
 #define STEAM_DURATION 300         // 5*60 = 5 minutes
 #define COOLING_DURATION 300      //
 #define WARMING_DURATION 300
@@ -44,6 +45,8 @@ unsigned countWorkTimer=0;
 unsigned countStageTimer=0;
 float currentTempF=-300;
 char  currentTempC[5];
+char bufRunningTime[14];
+
 //==========================================================================================
 
 void setup(void)
@@ -60,6 +63,8 @@ void setup(void)
 
   //====================Setup OLED=====================
 
+  workingMode=WORKING_MODE::None;
+  workingStage=WORKING_STAGE::Stopping;
 
   pinMode(HEATER_PIN,OUTPUT);
   pinMode(START_PIN, INPUT_PULLUP);
@@ -99,13 +104,14 @@ void loop(void)
 }
 
 void drawDisplay(){
-
+  convertSecond2Time(countWorkTimer);
   u8x8.setFont(u8x8_font_chroma48medium8_r);
   dtostrf(currentTempF, 3, 1, currentTempC);
   u8x8.drawString(3,0,"Sterilizer");
-  u8x8.drawString(0,2,"Mode : ");
-  u8x8.drawString(0,7,"Temp : ");
-  u8x8.drawString(7,7,currentTempC);
+  u8x8.drawString(0,3,"Mode : ");
+  u8x8.drawString(0,5,"Temp : ");
+  u8x8.drawString(7,5,currentTempC);
+  u8x8.drawString(0,7,bufRunningTime);
 
   Serial.print("Current temperatureis : ");
   Serial.println(currentTempC);
@@ -117,6 +123,12 @@ void turnheaterOff(){
 
 void turnHeaterOn(){
   digitalWrite(HEATER_PIN,HIGH);
+}
+
+void convertSecond2Time(unsigned lpSecond){
+  unsigned int runSecond=lpSecond % 60;
+  unsigned int runMinute=lpSecond / 60;
+  sprintf(bufRunningTime,"Time : %03d:%02d",runMinute,runSecond);
 }
 void timerOneSecond(){
 
