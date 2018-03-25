@@ -6,10 +6,10 @@
 
 
 
-#define TEMP_SENSOR_PIN 2
-#define HEATER_PIN 3
-#define START_PIN 4
-#define SHUTDOWN_PIN  5
+#define START_PIN 2
+#define SHUTDOWN_PIN  3
+#define TEMP_SENSOR_PIN 4
+#define HEATER_PIN 5
 #define BUZZER_PIN  6
 #define STEAM_DURATION 300         // 5*60 = 5 minutes
 #define COOLING_DURATION 300      //
@@ -44,8 +44,9 @@ U8X8_SSD1306_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
 unsigned countWorkTimer=0;
 unsigned countStageTimer=0;
 float currentTempF=-300;
-char  currentTempC[5];
-char bufRunningTime[14];
+//char  currentTempC[5];
+//char bufRunningTime[14];
+char charBuffer[14];
 
 //==========================================================================================
 
@@ -70,7 +71,7 @@ void setup(void)
   pinMode(START_PIN, INPUT_PULLUP);
   pinMode(SHUTDOWN_PIN, INPUT_PULLUP);
 
-  attachInterrupt(digitalPinToInterrupt(START_PIN), startButton, FALLING);
+  attachInterrupt(digitalPinToInterrupt(START_PIN), startButton, CHANGE);
   attachInterrupt(digitalPinToInterrupt(SHUTDOWN_PIN), shutdownButtont, FALLING);
   digitalWrite(HEATER_PIN,LOW);
   Timer1.initialize(1000000); // set a timer of length 1000000 microseconds 
@@ -104,17 +105,40 @@ void loop(void)
 }
 
 void drawDisplay(){
-  convertSecond2Time(countWorkTimer);
   u8x8.setFont(u8x8_font_chroma48medium8_r);
-  dtostrf(currentTempF, 3, 1, currentTempC);
   u8x8.drawString(3,0,"Sterilizer");
   u8x8.drawString(0,3,"Mode : ");
   u8x8.drawString(0,5,"Temp : ");
-  u8x8.drawString(7,5,currentTempC);
-  u8x8.drawString(0,7,bufRunningTime);
+  u8x8.drawString(0,7,"Time : ");
+  
+  switch (workingMode){
+    case WORKING_MODE::Boil:
+      strcpy(charBuffer, "Boil");
+      break;
+    case WORKING_MODE::Shutdown:
+      strcpy(charBuffer, "Off");
+      break;
+    case WORKING_MODE::Warm:
+      strcpy(charBuffer, "Warm");
+      break;
+    case WORKING_MODE::None:
+    default:
+      strcpy(charBuffer, "");
+      break;
+  }
+
+  u8x8.drawString(7,3,charBuffer);        //Temperature
+  dtostrf(currentTempF, 3, 2, charBuffer);
+  u8x8.drawString(7,5,charBuffer);        //Temperature
+  convertSecond2Time(countWorkTimer);
+  u8x8.drawString(7,7,charBuffer);        //Temperature
+
+
+  //u8x8.drawString(7,5,currentTempC);
+  //u8x8.drawString(0,7,bufRunningTime);
 
   Serial.print("Current temperatureis : ");
-  Serial.println(currentTempC);
+  Serial.println(currentTempF);
 }
 
 void turnheaterOff(){
@@ -128,7 +152,7 @@ void turnHeaterOn(){
 void convertSecond2Time(unsigned lpSecond){
   unsigned int runSecond=lpSecond % 60;
   unsigned int runMinute=lpSecond / 60;
-  sprintf(bufRunningTime,"Time : %03d:%02d",runMinute,runSecond);
+  sprintf(charBuffer,"%3d:%02d",runMinute,runSecond);
 }
 void timerOneSecond(){
 
